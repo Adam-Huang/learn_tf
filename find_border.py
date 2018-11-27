@@ -130,7 +130,25 @@ def del_restline(lists):
     
     return nnlist
 
-def get_bookspine(edgeimg,newlists):
+def zero_restROI(src_main,rect,newlist_l,newlist_r):
+    """
+    删除多余的区域，不然会对网络有更高的要求
+    @src_main：原图ROI
+    @rect: 矩形区域
+    @newlist_l/r：切割线的左值和右值
+    @return：切好的区域
+    """
+    src = src_main.copy()
+    ##通过测试发现，如果不进行copy操作，之后的操作会落在同一个内存上，导致原始数据的破坏
+    for i in range(rect[0],rect[2]):
+        for j in range(rect[1],rect[3]):
+            #f(x,y) = ky - x + b
+            if newlist_l[-1] * j - i + newlist_l[0][0] > 0 or newlist_r[-1] * j - i + newlist_r[0][0] < 0:
+                src[j,i] = 0
+    result = src[rect[1]:rect[3],rect[0]:rect[2]].copy()
+    return result
+
+def get_bookspine(src_main,edgeimg,newlists):
     """
     直线找到书的轮廓后需要排除书架以及其他干扰，
     输入是canny后的图像和上述new_lists
@@ -151,10 +169,10 @@ def get_bookspine(edgeimg,newlists):
         crosspoint_lists.append(crosspoint)
         if len(crosspoint_lists) > 1:
             sum_list = []
-            ##先判断是否有交叉，有交叉就删除斜率较小的那个
+            ##先判断是否有交叉或距离太大，满足则返回
             for i in range(1,12):
-                #if crosspoint_lists[j][i] - crosspoint_lists[j - 1][i] < 1:
-                #    break
+                if crosspoint_lists[j][i - 1] - crosspoint_lists[j - 1][i - 1] < 1 or crosspoint_lists[j][i - 1] - crosspoint_lists[j - 1][i - 1] > h//6:
+                    break
                 temp = edgeimg[step*i,crosspoint_lists[j - 1][i-1]:crosspoint_lists[j][i - 1]]
                 if temp.sum() > 255*2:
                     sum_list.append(1)
@@ -163,8 +181,10 @@ def get_bookspine(edgeimg,newlists):
             if sum(sum_list) > 3:
                 line_list.append((j-1,j))
                 left = max(min(newlists[j-1][0][0],newlists[j-1][1][0]),0)
-                lefte = max(newlists[j][0][0],newlists[j][1][0])
-                rect_lists.append([left,0,lefte,h])
+                lefte = min(max(newlists[j][0][0],newlists[j][1][0]),w)
+                rect = [left,0,lefte,h]
+                zerorect = zero_restROI(src_main,rect,newlists[j - 1],newlists[j])
+                rect_lists.append(zerorect)
     
     return rect_lists
 

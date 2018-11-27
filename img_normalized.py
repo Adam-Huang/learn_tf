@@ -21,14 +21,14 @@ def img_rename(path):
 
     file = os.listdir('.')
 
-    n = 0
+    n = 1
 
     for i in file:
-        oldname = path + file[n]
+        oldname = path + file[n - 1]
         if n//10 == 0:
-            newname = path + 'img0' + str(n + 1) + '.jpg'
+            newname = path + 'img0' + str(n) + '.jpg'
         else:
-            newname = path + 'img' + str(n + 1) + '.jpg'
+            newname = path + 'img' + str(n) + '.jpg'
         os.rename(oldname,newname)
         print(oldname,' -> ',newname)
 
@@ -47,5 +47,5 @@ def img_resize(path):
 
 
 if __name__ == '__main__':
-    img_rename('D:\\02-Python\\data\\one\\')
-    img_resize('D:\\02-Python\\data\\one\\')
+    img_rename('D:\\02-Python\\data\\two\\')
+    img_resize('D:\\02-Python\\data\\two\\')
